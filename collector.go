@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 )
 
-// WorkQueue A buffered channel that we can send work requests on.
-var WorkQueue = make(chan WorkRequest, 100)
+// WorkQueueWorkRequestChan A buffered channel that we can send work requests on.
+var WorkQueueWorkRequestChan = make(chan WorkRequest, 100)
 
 // Collector funzione invocata dal web server
+// crea una WorkRequest e la invia alla WorkQueue
 func Collector(w http.ResponseWriter, r *http.Request) {
 	// Make sure we can only be called with an HTTP POST request.
 	if r.Method != "POST" {
@@ -41,11 +41,11 @@ func Collector(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Now, we take the delay, and the person's name, and make a WorkRequest out of them.
-	work := WorkRequest{Name: name, Delay: delay}
+	workReq := WorkRequest{Name: name, Delay: delay}
 
 	// Push the work onto the queue.
-	WorkQueue <- work
-	fmt.Println("Work request queued")
+	WorkQueueWorkRequestChan <- workReq
+	//fmt.Println("work request queued")
 
 	// And let the user know their work request was created.
 	w.WriteHeader(http.StatusCreated)

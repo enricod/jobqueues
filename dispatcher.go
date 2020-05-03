@@ -2,32 +2,34 @@ package main
 
 import "fmt"
 
-// WorkerQueue vedi http://tleyden.github.io/blog/2013/11/23/understanding-chan-chans-in-go/
+// WorkerQueueChanChan vedi http://tleyden.github.io/blog/2013/11/23/understanding-chan-chans-in-go/
 // passiamo una richiesta che contiene un canale in nui il ricevente scriverà
-var WorkerQueue chan chan WorkRequest
+var WorkerQueueChanChan chan chan WorkRequest
 
 // StartDispatcher avviamo tutti i worker
 func StartDispatcher(nworkers int) {
 
-	WorkerQueue = make(chan chan WorkRequest, nworkers)
+	WorkerQueueChanChan = make(chan chan WorkRequest, nworkers)
 
 	// creiamo n worker queue
 	for i := 0; i < nworkers; i++ {
 		fmt.Println("Starting worker ", i+1)
-		worker := NewWorker(i+1, WorkerQueue)
+		worker := NewWorker(i+1, WorkerQueueChanChan)
 		worker.Start()
 	}
 
 	go func() {
 		for {
 			select {
-			case work := <-WorkQueue:
-				fmt.Println("Received work request")
+			// WorkQueueWorkRequestChan è creato dal Collector
+			case workReq := <-WorkQueueWorkRequestChan:
+				// attende work request passate dal Collector
+				fmt.Println("Received work request ", workReq.Name)
 				go func() {
-					worker := <-WorkerQueue
+					worker := <-WorkerQueueChanChan
 
-					fmt.Println("Dispatching work request")
-					worker <- work
+					fmt.Println("Dispatching work request ", workReq.Name)
+					worker <- workReq
 				}()
 			}
 		}

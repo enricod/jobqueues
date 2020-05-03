@@ -8,39 +8,40 @@ import (
 // NewWorker creates, and returns a new Worker object. Its only argument
 // is a channel that the worker can add itself to whenever it is done its
 // work.
-func NewWorker(id int, workerQueue chan chan WorkRequest) Worker {
+func NewWorker(id int, workerQueueChanChan chan chan WorkRequest) Worker {
 	// Create, and return the worker.
 	worker := Worker{
-		ID:          id,
-		Work:        make(chan WorkRequest),
-		WorkerQueue: workerQueue,
-		QuitChan:    make(chan bool)}
+		ID:                  id,
+		WorkRequestChan:     make(chan WorkRequest),
+		WorkerQueueChanChan: workerQueueChanChan,
+		QuitChan:            make(chan bool)}
 
 	return worker
 }
 
+// Worker kk
 type Worker struct {
-	ID          int
-	Work        chan WorkRequest
-	WorkerQueue chan chan WorkRequest
-	QuitChan    chan bool
+	ID                  int
+	WorkRequestChan     chan WorkRequest
+	WorkerQueueChanChan chan chan WorkRequest
+	QuitChan            chan bool
 }
 
-// This function "starts" the worker by starting a goroutine, that is
+// Start This function "starts" the worker by starting a goroutine, that is
 // an infinite "for-select" loop.
 func (w *Worker) Start() {
 	go func() {
 		for {
 			// Add ourselves into the worker queue.
-			w.WorkerQueue <- w.Work
+			w.WorkerQueueChanChan <- w.WorkRequestChan
 
 			select {
-			case work := <-w.Work:
+			case workRequest := <-w.WorkRequestChan:
 				// Receive a work request.
-				fmt.Printf("worker%d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
+				fmt.Printf("  worker%d: Received work request, delaying for %f seconds\n", w.ID, workRequest.Delay.Seconds())
 
-				time.Sleep(work.Delay)
-				fmt.Printf("worker%d: Hello, %s!\n", w.ID, work.Name)
+				time.Sleep(workRequest.Delay)
+				fmt.Printf("    worker%d: Hello, %s!\n", w.ID, workRequest.Name)
 
 			case <-w.QuitChan:
 				// We have been asked to stop.
